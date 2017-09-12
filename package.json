@@ -1,0 +1,23 @@
+{
+  "name": "kedge",
+  "description": "Gas price capped buyer edge.",
+  "version": "0.0.1",
+  "homepage": "https://github.com/troyth/kedge",
+  "author": {
+    "name": "troyth <troyth@gmail.com>",
+    "email": "troyth@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/troyth/kedge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/troyth/kedge/issues"
+  },
+  "engines": {
+    "node": ">=8.4.0"
+  },
+  "dependencies": {
+    "ethers": "*"
+  }
+}
