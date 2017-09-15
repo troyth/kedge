@@ -109,11 +109,9 @@ That said, this is only a guess as to what miners are actually implementing. Bes
 
 I am currently doing testing on the Ropsten test net. Stay tuned...
 
-| Batch         | gas_cost (wei)  | gas_price (gwei) | gas_limit (gwei) | % successful  | avg time (ms) | avg no. blocks  |
-| ------------- |:---------------:|:----------------:|:----------------:|:-------------:|:-------------:| ---------------:|
-| 1             | 21000           | 50 gwei          | 21000            | 60%           | 40000         | 4               |
-| 2             | 21000           | 50 gwei          | 22000            | 90%           | 40000         | 4               |
-| 3             | 21000           | 50 gwei          | 250000           | 90%           | 40000         | 4               |
+| Trial         | gas_cost (wei)  | gas_price (gwei) | gas_limit (gwei) | time (ms)  |
+| ------------- |:---------------:|:----------------:|:----------------:| --------------:|
+| 1             | 21000           | 50 gwei          | 150000            | 60%           |
 
 
 
@@ -124,12 +122,13 @@ You will have to edit the code in config.json to update the parameters below. Th
 
 * `private_key`: replace this with the private key of your whitelisted wallet (be sure to replace all the alphanumeric characters between the quotes but leave the quotes in place, but **do not** include any 0x prefix). For the Kyber token sale, you will have had to complete a whitelist and KYC process with a specific public address. This field is *not* for that public address, it is for the private key only. If you set up your wallet with another security method (like mnemonic phrase or keystore file and password), you can use [myetherwallet.com](https://www.myetherwallet.com/#view-wallet-info) to find your private key by logging in with the method you have available, and then printing a paper wallet. The private key will be in the PDF you generate.
 * `crowdsale_contract_address`: this is the ethereum address of the Kyber crowdsale contract. **You should check this very diligently and confirm that it is the same as that officially advertised by official Kyber channels. This is the address that you will send your ETH to on day 2 of the ICO, so if it is wrong, your ETH will go to someone else or be lost forever.** I will try to update this when Kyber announces it, but be diligent and check yourself.
-* `max_spend`: this is the maximum amount you are willing to spend on transaction fees in wei (1 ETH = 1000000000000000000 wei; you can use [this website](https://etherconverter.online/) to compute wei in terms of ether). Default is 2000000000000000000, which is equal to 2 ETH. Once this much has been spent, the program will abort even if you did not already successfully purchase Kyber tokens, so be thoughtful about how much you are willing to risk.
-* `timein`: this is the amount of time in milliseconds (ms) that you want to start attempting to call the buy() function before the day 2 period officially starts. Because the ethereum network blocktime is slightly different for each block (currently, it's about 24.5 seconds, or 24500 ms), it may be beneficial to start attempting to call the buy() function even before the official start time, as your transaction may not reach the Kyber crowdsale contract until after the official start time begins. Default is 24500 ms.
-* `period`: this is the time between each successive attempt to call the buy() function in milliseconds (ms). The shorter your period, the more quickly the Kedge program will attempt to call the buy() function, which will cost you more and may arrive at your `max_spend` cap very quickly. Default is 100 ms, which is 10 calls per second.
+* `max_tx_cost`: this is the maximum amount you are willing to spend on transaction fees in wei (1 ETH = 1000000000000000000 wei; you can use [this website](https://etherconverter.online/) to compute wei in terms of ether). The maximum cost of a transaction will be 7500000000000000. Default is 75000000000000000, which is equal to 0.075 ETH, and will allow for 10 transactions. Once this much has been spent, the program will abort even if you did not already successfully purchase Kyber tokens, so be thoughtful about how much you are willing to risk.
+* `time_buffer`: this is the amount of time in milliseconds (ms) that you want to start attempting to call the buy() function before the day 2 period officially starts. Because the ethereum network blocktime is slightly different for each block (currently, it's about 24.5 seconds, or 24500 ms), it may be beneficial to start attempting to call the buy() function even before the official start time, as your transaction may not reach the Kyber crowdsale contract until after the official start time begins. Default is 24500 ms.
+* `period`: this is the time between each successive attempt to call the buy() function in milliseconds (ms). The shorter your period, the more quickly the Kedge program will attempt to call the buy() function, which will cost you more and may arrive at your `max_tx_cost` cap very quickly. Default is 100 ms, which is 10 calls per second.
 * `gas_price`: the maximum gas price that the Kyber crowdsale contract allows is 50 gwei. This parameter allows you to set any value you like for the gas price of your transaction, but it is recommended to leave it at the default of 50 gwei. The parameter is measured in wei, so the default value is 50000000000.
-* `gas_limit`: this is the maximum number of gas units (priced at `gas_price` wei) that you are willing to spend for each transaction attempt. 250,000 gwei is a standard high value. This parameter is measured in wei, so the default value is 250000000000000.
-* `test_address`: this is an ethereum address (it looks like 0x###...###) of another wallet you own that you can use to test the program.
+* `gas_limit`: this is the maximum number of gas units (priced at `gas_price` wei) that you are willing to spend for each transaction attempt. Kyber suggests 150,000 gas. Testing a slightly edited version of the final contract on the Ropsten testnet revealed a gas cost of 59,763. Default here is 70,000.
+* `test_contract_address`: this is the ethereum address of a text Kyber contract on the Ropsten testnet that you can use to test the program.
+* `test_private_key`: this is the private key of a wallet you own on the Ropsten testnet that you can use to test the program.
 
 
 ## Instructions
@@ -152,28 +151,25 @@ This will set things up on your computer so you are ready for the rush at the be
 This should output the public address of your wallet and a list of all the parameters you set in the `config.json` file. If it does, your node.js installation was successful, and so were your edits to the `config.json` file.
 
 #### Test Send (optional but recommended)
-**This will cost you ETH, but not a lot.** The objective here is to attempt to send a very small amount of ETH from the wallet associated with the private key you entered (ie. your whitelisted wallet) to another wallet you own to make sure it is working. The test send will send 0.000000000000000001 ether, then 0.000000000000000003 ether, then 0.000000000000000005 ether to the wallet with the address you declare in quick succession.
+You can test the program on the Ropsten testnet by pasting the private key of a Ropsten testnet wallet you may have into the `test_private_key` parameter in the `config.json` file and running the program with:
 
-1.  set the `test_address` parameter in the `config.json` file to be the address of another ethereum wallet you own (you can easily and freely create one using [myetherwallet.com](https://www.myetherwallet.com/).\)
-open a command line interface (the Terminal app on a Mac)
-2.  move into the directory where you stored the Kedge repository (use the `cd` command)
-3.  type: `node kedge -test`
-4.  go to etherscan.io/address/`test_address` to see if the very small amounts were received, in which order, and when (it will take a few moments for the new transactions to appear)
+```
+node kedge -test
+```
 
 If it worked, then you are good to go. Else, you'll have to contact me to help troubleshoot (you can find me in a number of crypto slack teams @troyth). Note, in the terminal window, a link to each transaction on the etherscan network will be printed, which you can copy-paste into a browser to check on.
-
-#### Determine the Amount of Ether to Have in your Wallet
-```
-$ node kedge -prep
-```
-This will return the exact amount of Ether to make sure you have in your wallet.
-
 
 ### Beginning of Day 2 (do this moments before day 2 of the crowdsale starts)
 
 1.  Load your whitelisted wallet with exactly the amount of Ether you determined in the process above.
-2.  
+2.  Open terminal (on Mac) and type the startup command and press enter:
+
+```
+node kedge
+```
+
+3.	Watch your wallet on etherscan to see if it worked (don't stop the program until it closes out, or you are sure you have not been successful)
 
 
 ## Fee
-The cost of using this program is 2% of the total value of ETH you are trying to invest. A transfer function is called that sends this amount to the Kedge developers's Ethereum wallets (troyth and cintix) only on the very first transaction attempt and then it is disabled. If you run the program itself multiple times, the fee will be sent with each first transaction (ie. if you use it for other ICOs that use a similar structure). The test run does not cost anything.
+The cost of using this program is 1% of the total value of ETH you are trying to invest. A transfer function is called that sends this amount to the Kedge developers's Ethereum wallets only if you successfully transfer ETH to the target contract.

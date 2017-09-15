@@ -9,7 +9,7 @@ var ethers = require('ethers');
   * HELPERS FROM ETHERS MODULE
 */
 
-var Wallet = ethers.Wallet; // your wallet, accessed by private key
+var Wallet = ethers.Wallet; // Wallet constructor
 var utils = ethers.utils; // utility functions
 var providers = ethers.providers; // the blockchain
 
@@ -25,6 +25,7 @@ var maxSpendInWei = utils.bigNumberify( config.max_tx_cost ); // maximum transac
 var gasLimitInHex = utils.hexlify( gasLimitInGwei ); // convert values to hex
 var gasPriceInHex = utils.hexlify( gasPriceInGwei ); // convert values to hex
 
+var wallet; // instantiate wallet
 var provider = providers.getDefaultProvider( (environment == TESTNET ) ); // pass true for Ropsten testnet
 
 var MAINNET_CHAIN_ID = providers.Provider.chainId.homestead; // chain id for mainnet
@@ -45,17 +46,9 @@ var recipient_address = 0x0;
   * WALLET SETUP
 */
 
-// add 0x prefix to private key
-var privateKey = "0x" + config.private_key;
-
-// instantiate wallet with private key and main ethereum net
-var wallet = new Wallet( privateKey );
-
-// link the wallet to the Ethereum Main net as the blockchain provider
-wallet.provider = provider;
 
 /**
-  * ARGUMENTS
+  * ARGUMENTS and SETUP
 */
 
 var TESTNET = "ropsten";
@@ -69,12 +62,16 @@ switch(process.argv[2]){
     environment = TESTNET;
     CHAIN_ID = TESTNET_CHAIN_ID; // set CHAIN_ID based on environment variable
     MAX_TRANSACTIONS = utils.bigNumberify( 3 ); // hard code test transactions to 3
-    recipient_address = config.test_address;
+    recipient_address = config.test_contract_address;
+    // instantiate wallet with private key for ethereum testnet
+    wallet = new Wallet( "0x" + config.test_private_key);
     break;
   case "-private":
     environment = PRIVATENET;
     break;
   case "-confirm":
+    // instantiate wallet with private key for main ethereum net
+    wallet = new Wallet( "0x" + config.private_key);
     // log values to console
     console.log("Public Address: " + wallet.address);
     console.log("***");
@@ -92,8 +89,13 @@ switch(process.argv[2]){
 
     recipient_address = config.crowdsale_contract_address;
 
+    // instantiate wallet with private key for main ethereum net
+    wallet = new Wallet( "0x" + config.private_key);
     break;
 }
+
+// link the wallet to the Ethereum Main net as the blockchain provider
+wallet.provider = provider;
 
 /**
   * TRANSACT
@@ -147,7 +149,7 @@ wallet.getBalance().then(function(totalBalance) {
       nonceInInt++;
 
       // if environment, log transaction data to console
-      if( false && environment == TESTNET ){
+      if( environment == TESTNET ){
         console.log('transactions['+i+']:');
         console.dir(transactions[i]);
         console.log('signedTransactions['+i+']');
@@ -158,17 +160,32 @@ wallet.getBalance().then(function(totalBalance) {
     // counter for number of transactions
     var tx_count = 0;
 
-    var now = new Date(); // current time
+    var now = new Date().getTime(); // current time
+    var time_buffer = parseInt( config.time_buffer );
     var time_til_start;
     // set the start timer
     switch(environment){
       case TESTNET:
-        time_til_start = 0; // start now
+        var sale_start = parseInt(config.test_sale_start_time);
+
+        // time from now until start time in ms
+        time_til_start = sale_start - now - time_buffer;
+        console.log("now: "+ now);
+        console.log("test sale start time: " + sale_start);
+        console.log("time til start (ms): " + time_til_start);
+        console.log("config.time_buffer: " + time_buffer);
         break;
       case PRIVATENET:
+        time_til_start = 0; // start now
         break;
       default:
-        time_til_start = new Date( config.timein ) - now; // time from now until start time in ms
+        var sale_start = new Date(config.open_sale_start_time).getTime();
+
+        // time from now until start time in ms
+        time_til_start = sale_start - now - time_buffer;
+        console.log("config.open_sale_start_time: " + config.open_sale_start_time);
+        console.log("config.time_buffer: " + config.time_buffer);
+        console.log("time til start (ms): " + time_til_start);
         break;
     }
 
