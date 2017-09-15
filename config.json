@@ -4,7 +4,7 @@
   "max_tx_cost": "75000000000000000",
   "open_sale_start_time": "1505541600000",
   "time_buffer": "24500",
-  "period": "1000",
+  "period": "4000",
   "gas_price": "50000000000",
   "gas_limit": "70000",
   "test_sale_start_time": "1505517240000",
