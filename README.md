@@ -2,6 +2,8 @@
 
 A node.js program that gives whitelisted wallets an edge in attempting to purchase Kyber tokens on day 2 of the ICO when purchase amounts are uncapped. This code will allow your wallet to repeatedly send the entire amount of ETH in your wallet (minus transaction and developer fees) to the Kyber crowdsale contract from just prior to the start of day 2 until: (1) it has sold out, or (2) you have successfully purchased your desired amount of tokens, or (3) you have reached the maximum amount you are willing to spend on transaction fees.
 
+## Tl;dr
+Don't care about the details? Just skip to the instructions.
 
 ## Problem
 Kyber is doing a two phase ICO. Both phases are only for whitelisted wallets that have completed a Know Your Customer (KYC) process that reveals the wallet owner's official government identity. Phase 1 will likely have a very small personal cap (by the standards of major investors), the amount of which is dependent on the number of successful KYC applicants. Due to this small cap and the identity of the purchaser being tied to KYC, a traditional buyer pool is disincentivized because there is not enough funds to go around for many investors under a single cap and the KYC applicant may be liable for taxes on the entire purchase amount.
@@ -12,8 +14,8 @@ Phase 2, beginning on day 2, is uncapped, but all transactions are limited to a 
 ## Opportunity
 Because the gas price is capped, the success of a purchase on day 2 can be augmented by sending multiple transactions in quick succession as soon as day 2 starts. The Kedge program allows you to repeatedly attempt to buy Kyber tokens in fast succession the moment the Kyber crowdsale contract begins accepting requests.
 
-
-## Assumptions
+## Strategy
+### Assumptions
 This strategy works on the following understanding of mining algorithms. If you feel this is not the case, please add your comments in the issues list.
 
 The gas cost of a transaction is fixed by the byte code of the transaction itself and the standardized cost of each operation code therein. For Kyber, this is a simple transfer of ETH from one account to another, which is fixed at `21000 wei`. The gas price is limited to `50 gwei`, so a miner can only hope to earn a reward of `50 gwei * 21000 wei`, or `gas_price * gas_cost` if they include your transaction.
@@ -40,21 +42,88 @@ transaction_fee_by_limit = gas_price * gas_limit
 
 So, will a miner choose your transaction if you use a high `gas_limit` or not? I think they will. Because a `gas_price` of `50 gwei` is 2x the current average of `25 gwei`, a miner is likely to want to include your transaction. They will be disappointed once they have selected it and it only returns them `21000 wei` as a total `gas_cost`, but they won't know that in advance.
 
-That said, this is only a guess. Best to test...
 
-## Testing
+### Mining Strategy
+#### Geth
+Geth comes pre-installed with a single default mining strategy, but leaves two other options commented out of their code, which would be easy for a savvy enough miner to recover and implement:
 
-I did some poll testing to see what miners prefer: `50 gwei` transfers of `21000 wei` gas cost sent with a high `gas_limit` or a low one. Here's a table of my results on the Ropsten testnet and the Ethereum mainnet:
+```
+/* //approach 1
+	transactions := self.eth.TxPool().GetTransactions()
+	sort.Sort(types.TxByNonce(transactions))
+	*/
+
+	//approach 2
+	transactions := self.eth.TxPool().GetTransactions()
+	types.SortByPriceAndNonce(transactions)
+
+	/* // approach 3
+	// commit transactions for this run.
+	txPerOwner := make(map[common.Address]types.Transactions)
+	// Sort transactions by owner
+	for _, tx := range self.eth.TxPool().GetTransactions() {
+		from, _ := tx.From() // we can ignore the sender error
+		txPerOwner[from] = append(txPerOwner[from], tx)
+	}
+	var (
+		singleTxOwner types.Transactions
+		multiTxOwner  types.Transactions
+	)
+	// Categorise transactions by
+	// 1. 1 owner tx per block
+	// 2. multi txs owner per block
+	for _, txs := range txPerOwner {
+		if len(txs) == 1 {
+			singleTxOwner = append(singleTxOwner, txs[0])
+		} else {
+			multiTxOwner = append(multiTxOwner, txs...)
+		}
+	}
+	sort.Sort(types.TxByPrice(singleTxOwner))
+	sort.Sort(types.TxByNonce(multiTxOwner))
+	transactions := append(singleTxOwner, multiTxOwner...)
+	*/
+```
+
+The default option is super simple: it just sorts by gas price and nonce (the order in which transactions are signed by the transacting wallet). The only potential problem here is that the third option, which is commented out, would prioritize wallets that send a single transaction per block, which is a liability for spamming.
+
+#### Parity
+Parity offers it's users the option of choosing from 5 strategies as command line arguments:
+
+```
+--tx-queue-strategy S          Prioritization strategy used to order transactions
+                                in the queue. S may be:
+                                gas - Prioritize txs with low gas limit;
+                                gas_price - Prioritize txs with high gas price;
+                                gas_factor - Prioritize txs using gas price
+                                and gas limit ratio (default: gas_price).
+```
+[Source](https://github.com/paritytech/parity/blob/e9abcb2f6d9d5a4a451beb61de7c85e793ea71f3/ethcore/src/miner/transaction_queue.rs#L235)
+
+The default is to sort by `gas_price` alone, though another option favors the lowest `gas_limit`. All to say, these are both aligned with the Kedge protocol.
+
+That said, this is only a guess as to what miners are actually implementing. Best to test...
+
+
+### Testing
+
+I am currently doing testing on the Ropsten test net. Stay tuned...
+
+| Batch         | gas_cost (wei)  | gas_price (gwei) | gas_limit (gwei) | % successful  | avg time (ms) | avg no. blocks  |
+| ------------- |:---------------:|:----------------:|:----------------:|:-------------:|:-------------:| ---------------:|
+| 1             | 21000           | 50 gwei          | 21000            | 60%           | 40000         | 4               |
+| 2             | 21000           | 50 gwei          | 22000            | 90%           | 40000         | 4               |
+| 3             | 21000           | 50 gwei          | 250000           | 90%           | 40000         | 4               |
 
 
 
 ## Parameters
-You will have to edit the code in config.json to update the parameters below. This is explained below in [Set up]() step 4. The only parameters you **must** update are `private_key` and `kyber_crowdsale_contract_address`, all others can be set by default. That said, you should read all the parameters and understand their defaults so you are not surprised if the program stops attempting to buy before being successful or your attempts cost you more than you were expecting.
+You will have to edit the code in config.json to update the parameters below. This is explained below in [Set up]() step 4. The only parameters you **must** update are `private_key` and `crowdsale_contract_address`, all others can be set by default. That said, you should read all the parameters and understand their defaults so you are not surprised if the program stops attempting to buy before being successful or your attempts cost you more than you were expecting.
 
 **Warning: if you accidentally publish or share your `private_key`, ANYONE can steal all of your funds. If you are using Github, I have set the .gitignore file to NOT upload your config.json file with your `private_key` to the Github cloud. If you are using another public cloud service to store this code, I suggest not syncing the config.json file to the could, as it could get hacked and you could lose everything. Only edit your local version of config.json with your `private_key` to be safe.**
 
 * `private_key`: replace this with the private key of your whitelisted wallet (be sure to replace all the alphanumeric characters between the quotes but leave the quotes in place, but **do not** include any 0x prefix). For the Kyber token sale, you will have had to complete a whitelist and KYC process with a specific public address. This field is *not* for that public address, it is for the private key only. If you set up your wallet with another security method (like mnemonic phrase or keystore file and password), you can use [myetherwallet.com](https://www.myetherwallet.com/#view-wallet-info) to find your private key by logging in with the method you have available, and then printing a paper wallet. The private key will be in the PDF you generate.
-* `kyber_crowdsale_contract_address`: this is the ethereum address of the Kyber crowdsale contract. **You should check this very diligently and confirm that it is the same as that officially advertised by official Kyber channels. This is the address that you will send your ETH to on day 2 of the ICO, so if it is wrong, your ETH will go to someone else or be lost forever.** I will try to update this when Kyber announces it, but be diligent and check yourself.
+* `crowdsale_contract_address`: this is the ethereum address of the Kyber crowdsale contract. **You should check this very diligently and confirm that it is the same as that officially advertised by official Kyber channels. This is the address that you will send your ETH to on day 2 of the ICO, so if it is wrong, your ETH will go to someone else or be lost forever.** I will try to update this when Kyber announces it, but be diligent and check yourself.
 * `max_spend`: this is the maximum amount you are willing to spend on transaction fees in wei (1 ETH = 1000000000000000000 wei; you can use [this website](https://etherconverter.online/) to compute wei in terms of ether). Default is 2000000000000000000, which is equal to 2 ETH. Once this much has been spent, the program will abort even if you did not already successfully purchase Kyber tokens, so be thoughtful about how much you are willing to risk.
 * `timein`: this is the amount of time in milliseconds (ms) that you want to start attempting to call the buy() function before the day 2 period officially starts. Because the ethereum network blocktime is slightly different for each block (currently, it's about 24.5 seconds, or 24500 ms), it may be beneficial to start attempting to call the buy() function even before the official start time, as your transaction may not reach the Kyber crowdsale contract until after the official start time begins. Default is 24500 ms.
 * `period`: this is the time between each successive attempt to call the buy() function in milliseconds (ms). The shorter your period, the more quickly the Kedge program will attempt to call the buy() function, which will cost you more and may arrive at your `max_spend` cap very quickly. Default is 100 ms, which is 10 calls per second.
@@ -71,7 +140,7 @@ This will set things up on your computer so you are ready for the rush at the be
 1.  install node.js and npm
 2.  install git and clone the Kedge repository to your local computer; **or** just download the zip file of this repository
 3.  move into the directory where you stored the Kedge repository (use the `cd` command) and type: `npm install`
-4.  open the `config.json` file in a plain text editor (**Do not use Word.** Use a computer code editor like Atom or Sublime Text, which you can download for free. If you do not have these, use Notepad on a PC or textedit on a Mac.) and update the `private_key` to match that of the wallet you whitelisted and any other parameters you would like to customize
+4.  open the `config.json` file in a plain text editor (**Do not use Word.** Use a computer code editor like Atom or Sublime Text, which you can download for free. If you do not have these, use Notepad on a PC or textedit on a Mac.) and update the `private_key` to match that of the wallet you whitelisted and any other parameters you would like to customize (*Note: I am currently testing the best `gas_limit` and will update the default parameter in a future version.*)
 
 #### Confirm Installation (optional but recommended)
 *These instructions will be for Mac and Linux users. Windows/PC users should look at the nodejs.org website to see how to interact with node on their operating system. I believe you should do it through the Command Prompt, and the syntax may be the same, but I'm not sure.**
@@ -93,10 +162,16 @@ open a command line interface (the Terminal app on a Mac)
 
 If it worked, then you are good to go. Else, you'll have to contact me to help troubleshoot (you can find me in a number of crypto slack teams @troyth). Note, in the terminal window, a link to each transaction on the etherscan network will be printed, which you can copy-paste into a browser to check on.
 
+#### Determine the Amount of Ether to Have in your Wallet
+```
+$ node kedge -prep
+```
+This will return the exact amount of Ether to make sure you have in your wallet.
+
 
 ### Beginning of Day 2 (do this moments before day 2 of the crowdsale starts)
 
-1.  Load your whitelisted wallet with exactly the amount of Ether you want to spend on purchasing Kyber tokens.
+1.  Load your whitelisted wallet with exactly the amount of Ether you determined in the process above.
 2.  
 
 

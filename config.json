@@ -1,0 +1,10 @@
+{
+  "private_key": "",
+  "crowdsale_contract_address": "",
+  "max_tx_cost": "2000000000000000000",
+  "timein": "1505541600",
+  "period": "1000",
+  "gas_price": "50000000000",
+  "gas_limit": "250000",
+  "test_address": ""
+}
