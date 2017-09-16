@@ -6,7 +6,7 @@
   "time_buffer": "28000",
   "period": "4000",
   "gas_price": "50000000000",
-  "gas_limit": "150000",
+  "gas_limit": "100000",
   "test_sale_start_time": "1505517240000",
   "test_private_key": "",
   "test_contract_address": "0x972b4a9bCF20e04Ee1d99BE6BD0E23C48f6D19AF"

@@ -147,7 +147,7 @@ wallet.getBalance().then(function(totalBalance) {
       signedTransactions[i] = wallet.sign( transactions[i] );
 
       // if environment, log transaction data to console
-      if( environment == TESTNET ){
+      if( true || environment == TESTNET ){
         console.log("");
         console.log('transactions[' + i + ']:');
         console.dir(transactions[i]);
