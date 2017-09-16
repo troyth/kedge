@@ -159,4 +159,4 @@ node kedge
 
 
 ## Fee
-The cost of using this program is 1% of the total value of ETH you are trying to invest. A transfer function is called that sends this amount to the Kedge developers's Ethereum wallets only if you successfully transfer ETH to the target contract.
+The cost of using this program is 1% of the total value of ETH you are trying to invest. A transfer function is called that sends this amount to the Kedge developers's Ethereum wallet only if you successfully transfer ETH to the target contract.
