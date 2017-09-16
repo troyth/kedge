@@ -18,15 +18,15 @@ var providers = ethers.providers; // the blockchain
   * CONSTANTS
 */
 
-var gasLimitInGwei = utils.bigNumberify( config.gas_limit ); // gas limit in safe Big Number format
-var gasPriceInGwei = utils.bigNumberify( config.gas_price ); // gas price in safe Big Number format
-var maxSpendInWei = utils.bigNumberify( config.max_tx_cost ); // maximum transaction spend in Big Number format
+var gasLimitInGas = utils.bigNumberify( config.gas_limit ); // gas limit in safe Big Number format
+var gasPriceInWei = utils.bigNumberify( config.gas_price ); // gas price in safe Big Number format
+var maxTxCostInWei = utils.bigNumberify( config.max_tx_cost_in_wei ); // maximum transaction spend in Big Number format
 
-var gasLimitInHex = utils.hexlify( gasLimitInGwei ); // convert values to hex
-var gasPriceInHex = utils.hexlify( gasPriceInGwei ); // convert values to hex
+var gasLimitInHex = utils.hexlify( gasLimitInGas ); // convert values to hex
+var gasPriceInHex = utils.hexlify( gasPriceInWei ); // convert values to hex
 
+var provider; // instantiate blockchain provider
 var wallet; // instantiate wallet
-var provider = providers.getDefaultProvider( (environment == TESTNET ) ); // pass true for Ropsten testnet
 
 var MAINNET_CHAIN_ID = providers.Provider.chainId.homestead; // chain id for mainnet
 var TESTNET_CHAIN_ID = providers.Provider.chainId.ropsten; // chain id for Ropsten environment
@@ -61,6 +61,7 @@ switch(process.argv[2]){
     recipient_address = config.test_contract_address;
     // instantiate wallet with private key for ethereum testnet
     wallet = new Wallet( "0x" + config.test_private_key);
+    provider = providers.getDefaultProvider( true ); // pass true for Ropsten testnet
     break;
   case "-private":
     environment = PRIVATENET;
@@ -80,13 +81,15 @@ switch(process.argv[2]){
     CHAIN_ID = MAINNET_CHAIN_ID; // set CHAIN_ID based on environment variable
 
     // determine maxiumum number of transactions based on input parameters
-    var transactionCost = gasPriceInGwei.mul( gasLimitInWei ); // cost per transaction
-    MAX_TRANSACTIONS = maxSpendInWei.div( transactionCost ); // maximum transactions is max_tx_cost divided by
+    var transactionCostInWei = gasPriceInWei.mul( gasLimitInGas ); // cost per transaction
+    MAX_TRANSACTIONS = maxTxCostInWei.div( transactionCostInWei ); // maximum transactions is max_tx_cost_in_wei divided by
 
     recipient_address = config.crowdsale_contract_address;
 
     // instantiate wallet with private key for main ethereum net
     wallet = new Wallet( "0x" + config.private_key);
+    provider = providers.getDefaultProvider( ); // pass nothing for mainnet
+
     break;
 }
 
@@ -100,17 +103,19 @@ wallet.provider = provider;
 // need to get wallet balance first, so wrap everything below in this balance callback
 wallet.getBalance().then(function(totalBalance) {
   // totalBalance is a BigNumber in wei of the total balance of the wallet
-  console.log("totalBalance: " + totalBalance);
+  console.log("Total wallet balance: " + totalBalance);
 
-  var cost = 0; // cost
-
-  // subtract max_tx_cost param and costs from total balance to ensure transactions don't run out of gas
-  available_balance = totalBalance.sub( config.max_tx_cost ); // subtract maximum amount willing to spend on transaction costs
-  cost = available_balance.div( 100 );
+  // subtract max_tx_cost_in_wei param and costs from total balance to ensure transactions don't run out of gas
+  available_balance = totalBalance.sub( maxTxCostInWei ); // subtract maximum amount willing to spend on transaction costs
+  var percent = utils.bigNumberify( 100 );
+  var cost = available_balance.div( percent );
   available_balance = available_balance.sub( cost ); // subtract cost from totalBalance
   MAX_TRANSACTIONS = MAX_TRANSACTIONS.sub( 1 ); // save a transaction for the cost
-  console.log("available_balance: " + available_balance);
 
+  console.log("Maximum transactions: " + MAX_TRANSACTIONS);
+  console.log("Available balance: " + available_balance);
+  console.log("Cost: " + cost);
+  console.log("");
 
   // need to get the nonce first, so wrap the entire operation in the nonce callback
   wallet.getTransactionCount().then(function( nonceInInt ){
@@ -119,7 +124,6 @@ wallet.getBalance().then(function(totalBalance) {
     var signedTransactions = []; // instantiate array of signed transactions
     var amountToSpend = available_balance; // set amount of ether to send in wei
 
-    console.log("MAX_TRANSACTIONS: " + MAX_TRANSACTIONS);
     // create MAX_TRANSACTIONS number of unsigned transactions with increasing odd values
     for(var i = 0; i < MAX_TRANSACTIONS; i++){
 
@@ -190,6 +194,7 @@ wallet.getBalance().then(function(totalBalance) {
 
         var sentPromise = provider.sendTransaction(signedTransactions[tx_count]).then(function(hash) {
           console.log("sent tx");
+          console.log("tx hash: " + hash);
 
           // Now the tx has been fully populated with nonce, hash, etc.
           return provider.waitForTransaction(hash).then(function(tx) {
@@ -256,6 +261,7 @@ function pay( _nonceInInt, _cost, _timerID ) {
     paid = true;
     var sentPromise = provider.sendTransaction(signedTx).then(function(hash) {
       console.log("sent cost with nonce: " + _nonceInInt);
+      console.log("cost tx hash: " + hash);
       // Now the tx has been fully populated with nonce, hash, etc.
       return provider.waitForTransaction(hash).then(function(tx) {
           console.log("cost with nonce " + _nonceInInt + " has been mined");

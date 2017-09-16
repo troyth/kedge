@@ -1,7 +1,7 @@
 {
   "private_key": "",
   "crowdsale_contract_address": "0xd6Cd31F283d24cfb442cBA1Bcf42290c07C15792",
-  "max_tx_cost": "84000000000000000",
+  "max_tx_cost_in_wei": "84000000000000000",
   "open_sale_start_time": "1505541600000",
   "time_buffer": "24500",
   "period": "4000",
