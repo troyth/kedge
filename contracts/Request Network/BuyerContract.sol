@@ -95,9 +95,12 @@ contract RequestSale {
     sale.transfer(contract_eth_value);
   }
 ​
-  function upgrade_cap() {
+  function upgrade_cap(uint256 new_cap) {
+      if (eth_cap > new_cap) {
+          return;
+      }
       if (msg.sender == owner) {
-          eth_cap = 500 ether;
+          eth_cap = new_cap;
       }
   }
   
