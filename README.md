@@ -148,7 +148,7 @@ If it worked, then you are good to go. Else, you'll have to contact me to help t
 
 ### Beginning of Day 2 (do this moments before day 2 of the crowdsale starts)
 
-1.  Load your whitelisted wallet with exactly the amount of Ether you determined in the process above.
+1.  Load your whitelisted wallet with exactly the amount of Ether you are willing to spend (investing + fees).
 2.  Open terminal (on Mac) and type the startup command and press enter:
 
 ```
