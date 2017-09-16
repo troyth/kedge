@@ -28,19 +28,7 @@ Miners use the following formula to determine their total potential reward on a 
 reward = max(BLOCK_GAS_LIMIT, SUM(transaction_fee_by_limit))
 ```
 
-`BLOCK_GAS_LIMIT ` is set by the Ethereum network (currently ~6.7M gas) as a limit to the size of each block, so miners cannot exceed this. To do so, they have to choose from the entire pool of transactions which to include in their block such that they fall below the `BLOCK_GAS_LIMIT` and maximize their reward. A miner would ideally do this by simply choosing the transaction with the highest transaction fee:
-
-```
-transaction_fee = gas_price * gas_cost
-```
-
-The problem is that a miner cannot know the `transaction_fee` until after they have calculated the `gas_cost` of its operations, and there is not time for them to do that in advance. So, miners must choose which transactions to include in their blocks based only on what is advertised, the `transaction_fee_by_limit`:
-
-```
-transaction_fee_by_limit = gas_price * gas_limit
-```
-
-So, will a miner choose your transaction if you use a high `gas_limit` or not? I think they will. Because a `gas_price` of `50 gwei` is 2x the current average of `25 gwei`, a miner is likely to want to include your transaction. They will be disappointed once they have selected it and it only returns them `21000 wei` as a total `gas_cost`, but they won't know that in advance.
+`BLOCK_GAS_LIMIT ` is set by the Ethereum network (currently ~6.7M gas) as a limit to the size of each block, so miners cannot exceed this. To do so, they have to choose from the entire pool of transactions which to include in their block such that they fall below the `BLOCK_GAS_LIMIT` and maximize their reward. Miners do this by choosing a combination of the highest `gas_price` and lowest `gas_limit`, as they have to refund any unused gas.
 
 
 ### Mining Strategy
@@ -107,12 +95,7 @@ That said, this is only a guess as to what miners are actually implementing. Bes
 
 ### Testing
 
-I am currently doing testing on the Ropsten test net. Stay tuned...
-
-| Trial         | gas_cost (wei)  | gas_price (gwei) | gas_limit (gwei) | time (ms)  |
-| ------------- |:---------------:|:----------------:|:----------------:| --------------:|
-| 1             | 21000           | 50 gwei          | 150000            | 60%           |
-
+I am currently doing testing on the Ropsten testnet. The gas cost has consistently been `59763`. You can see the contract and results here: https://ropsten.etherscan.io/address/0x972b4a9bcf20e04ee1d99be6bd0e23c48f6d19af
 
 
 ## Parameters
@@ -122,7 +105,7 @@ You will have to edit the code in config.json to update the parameters below. Th
 
 * `private_key`: replace this with the private key of your whitelisted wallet (be sure to replace all the alphanumeric characters between the quotes but leave the quotes in place, but **do not** include any 0x prefix). For the Kyber token sale, you will have had to complete a whitelist and KYC process with a specific public address. This field is *not* for that public address, it is for the private key only. If you set up your wallet with another security method (like mnemonic phrase or keystore file and password), you can use [myetherwallet.com](https://www.myetherwallet.com/#view-wallet-info) to find your private key by logging in with the method you have available, and then printing a paper wallet. The private key will be in the PDF you generate.
 * `crowdsale_contract_address`: this is the ethereum address of the Kyber crowdsale contract. **You should check this very diligently and confirm that it is the same as that officially advertised by official Kyber channels. This is the address that you will send your ETH to on day 2 of the ICO, so if it is wrong, your ETH will go to someone else or be lost forever.** I will try to update this when Kyber announces it, but be diligent and check yourself.
-* `max_tx_cost`: this is the maximum amount you are willing to spend on transaction fees in wei (1 ETH = 1000000000000000000 wei; you can use [this website](https://etherconverter.online/) to compute wei in terms of ether). The maximum cost of a transaction will be 7500000000000000. Default is 75000000000000000, which is equal to 0.075 ETH, and will allow for 10 transactions. Once this much has been spent, the program will abort even if you did not already successfully purchase Kyber tokens, so be thoughtful about how much you are willing to risk.
+* `max_tx_cost`: this is the maximum amount you are willing to spend on transaction fees in wei (1 ETH = 1000000000000000000 wei; you can use [this website](https://etherconverter.online/) to compute wei in terms of ether). If you leave the default `gas_price` and `gas_limit`, the cost of a transaction will be 3500000000000000. Default is 84000000000000000, which is equal to 0.084 ETH, and will allow for 24 transactions. Once this much has been spent, the program will abort even if you did not already successfully purchase Kyber tokens, so be thoughtful about how much you are willing to risk.
 * `time_buffer`: this is the amount of time in milliseconds (ms) that you want to start attempting to call the buy() function before the day 2 period officially starts. Because the ethereum network blocktime is slightly different for each block (currently, it's about 24.5 seconds, or 24500 ms), it may be beneficial to start attempting to call the buy() function even before the official start time, as your transaction may not reach the Kyber crowdsale contract until after the official start time begins. Default is 24500 ms.
 * `period`: this is the time between each successive attempt to call the buy() function in milliseconds (ms). The shorter your period, the more quickly the Kedge program will attempt to call the buy() function, which will cost you more and may arrive at your `max_tx_cost` cap very quickly. Default is 100 ms, which is 10 calls per second.
 * `gas_price`: the maximum gas price that the Kyber crowdsale contract allows is 50 gwei. This parameter allows you to set any value you like for the gas price of your transaction, but it is recommended to leave it at the default of 50 gwei. The parameter is measured in wei, so the default value is 50000000000.
