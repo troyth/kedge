@@ -3,7 +3,7 @@
 A node.js program that gives whitelisted wallets an edge in attempting to purchase Kyber tokens on day 2 of the ICO when purchase amounts are uncapped. This code will allow your wallet to repeatedly send the entire amount of ETH in your wallet (minus transaction and developer fees) to the Kyber crowdsale contract from just prior to the start of day 2 until: (1) it has sold out, or (2) you have successfully purchased your desired amount of tokens, or (3) you have reached the maximum amount you are willing to spend on transaction fees.
 
 ## Tl;dr
-Don't care about the details? Just skip to the instructions.
+Don't care about the details? Just skip to the [instructions](https://github.com/troyth/kedge#instructions).
 
 ## Problem
 Kyber is doing a two phase ICO. Both phases are only for whitelisted wallets that have completed a Know Your Customer (KYC) process that reveals the wallet owner's official government identity. Phase 1 will likely have a very small personal cap (by the standards of major investors), the amount of which is dependent on the number of successful KYC applicants. Due to this small cap and the identity of the purchaser being tied to KYC, a traditional buyer pool is disincentivized because there is not enough funds to go around for many investors under a single cap and the KYC applicant may be liable for taxes on the entire purchase amount.
