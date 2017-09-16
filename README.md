@@ -31,7 +31,7 @@ reward = max(BLOCK_GAS_LIMIT, SUM(transaction_fee_by_limit))
 `BLOCK_GAS_LIMIT ` is set by the Ethereum network (currently ~6.7M gas) as a limit to the size of each block, so miners cannot exceed this. To do so, they have to choose from the entire pool of transactions which to include in their block such that they fall below the `BLOCK_GAS_LIMIT` and maximize their reward. Miners do this by choosing a combination of the highest `gas_price` and lowest `gas_limit`, as they have to refund any unused gas.
 
 
-### Mining Strategy
+### Mining Strategy Examined
 #### Geth
 Geth comes pre-installed with a single default mining strategy, but leaves two other options commented out of their code, which would be easy for a savvy enough miner to recover and implement:
 
