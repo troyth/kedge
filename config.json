@@ -3,7 +3,7 @@
   "crowdsale_contract_address": "0xd6Cd31F283d24cfb442cBA1Bcf42290c07C15792",
   "max_tx_cost_in_wei": "150000000000000000",
   "open_sale_start_time": "1505541600000",
-  "time_buffer": "28000",
+  "time_buffer": "27900",
   "period": "4000",
   "gas_price": "50000000000",
   "gas_limit": "100000",
