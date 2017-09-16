@@ -3,8 +3,23 @@
   "crowdsale_contract_address": "0xd6Cd31F283d24cfb442cBA1Bcf42290c07C15792",
   "max_tx_cost_in_wei": "84000000000000000",
   "open_sale_start_time": "1505541600000",
-  "time_buffer": "24500",
+  "time_buffer": "24000",
   "period": "4000",
+  "gas_price": "50000000000",
+  "gas_limit": "70000",
+  "test_sale_start_time": "1505517240000",
+  "test_private_key": "",
+  "test_contract_address": "0x972b4a9bCF20e04Ee1d99BE6BD0E23C48f6D19AF"
+}
+
+
+{
+  "private_key": "",
+  "crowdsale_contract_address": "0xd6Cd31F283d24cfb442cBA1Bcf42290c07C15792",
+  "max_tx_cost_in_wei": "3000000000000000000",
+  "open_sale_start_time": "1505541600000",
+  "time_buffer": "34500",
+  "period": "2500",
   "gas_price": "50000000000",
   "gas_limit": "70000",
   "test_sale_start_time": "1505517240000",
