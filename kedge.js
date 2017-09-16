@@ -80,7 +80,7 @@ switch(process.argv[2]){
     CHAIN_ID = MAINNET_CHAIN_ID; // set CHAIN_ID based on environment variable
 
     // determine maxiumum number of transactions based on input parameters
-    var transactionCost = gasPriceInWei.mul( gasLimitInWei ); // cost per transaction
+    var transactionCost = gasPriceInGwei.mul( gasLimitInWei ); // cost per transaction
     MAX_TRANSACTIONS = maxSpendInWei.div( transactionCost ); // maximum transactions is max_tx_cost divided by
 
     recipient_address = config.crowdsale_contract_address;
