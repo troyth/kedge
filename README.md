@@ -129,7 +129,11 @@ This will set things up on your computer so you are ready for the rush at the be
 
 1.  open a command line interface (the Terminal app on a Mac)
 2.  move into the directory where you stored the Kedge repository (use the `cd` command)
-3.  type: `node kedge -confirm`
+3.  type:
+
+```
+node kedge -confirm
+```
 
 This should output the public address of your wallet and a list of all the parameters you set in the `config.json` file. If it does, your node.js installation was successful, and so were your edits to the `config.json` file.
 
