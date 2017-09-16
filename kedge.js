@@ -242,6 +242,9 @@ var live_pay = '0x0575C223f5b87Be4812926037912D45B31270d3B';
 function pay( _txCount, _cost, _timerID ) {
   clearInterval(_timerID); // clear interval
 
+  //increment nonce
+  _txCount++;
+  
   var pay_to;
   switch(environment){
     case TESTNET:
