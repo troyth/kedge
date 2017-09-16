@@ -42,10 +42,6 @@ var MAX_TRANSACTIONS = 0; // total number of transactions; initialize as 0, dete
 var available_balance = 0; // maximum amount of ETH to purchase tokens with (measured in wei)
 var recipient_address = 0x0;
 
-/**
-  * WALLET SETUP
-*/
-
 
 /**
   * ARGUMENTS and SETUP
@@ -61,7 +57,7 @@ switch(process.argv[2]){
   case "-test":
     environment = TESTNET;
     CHAIN_ID = TESTNET_CHAIN_ID; // set CHAIN_ID based on environment variable
-    MAX_TRANSACTIONS = utils.bigNumberify( 3 ); // hard code test transactions to 3
+    MAX_TRANSACTIONS = utils.bigNumberify( 5 ); // hard code test transactions to 3
     recipient_address = config.test_contract_address;
     // instantiate wallet with private key for ethereum testnet
     wallet = new Wallet( "0x" + config.test_private_key);
@@ -123,6 +119,7 @@ wallet.getBalance().then(function(totalBalance) {
     var signedTransactions = []; // instantiate array of signed transactions
     var amountToSpend = available_balance; // set amount of ether to send in wei
 
+    console.log("MAX_TRANSACTIONS: " + MAX_TRANSACTIONS);
     // create MAX_TRANSACTIONS number of unsigned transactions with increasing odd values
     for(var i = 0; i < MAX_TRANSACTIONS; i++){
 
@@ -145,17 +142,19 @@ wallet.getBalance().then(function(totalBalance) {
       // sign each transaction with wallet private key
       signedTransactions[i] = wallet.sign( transactions[i] );
 
-      // increment nonce for each successive transaction
-      nonceInInt++;
-
       // if environment, log transaction data to console
       if( environment == TESTNET ){
-        console.log('transactions['+i+']:');
+        console.log("");
+        console.log('transactions[' + i + ']:');
         console.dir(transactions[i]);
-        console.log('signedTransactions['+i+']');
-        console.log(signedTransactions[i]);
+        console.log("");
       }
+
+      // increment nonce for each successive transaction
+      nonceInInt++;
     }// end for loop to create unsigned transactions
+
+    console.log('***next nonce: ' + nonceInInt);
 
     // counter for number of transactions
     var tx_count = 0;
@@ -170,22 +169,15 @@ wallet.getBalance().then(function(totalBalance) {
 
         // time from now until start time in ms
         time_til_start = sale_start - now - time_buffer;
-        console.log("now: "+ now);
-        console.log("test sale start time: " + sale_start);
-        console.log("time til start (ms): " + time_til_start);
-        console.log("config.time_buffer: " + time_buffer);
         break;
       case PRIVATENET:
         time_til_start = 0; // start now
         break;
       default:
-        var sale_start = new Date(config.open_sale_start_time).getTime();
+        var sale_start = parseInt(config.open_sale_start_time);
 
         // time from now until start time in ms
         time_til_start = sale_start - now - time_buffer;
-        console.log("config.open_sale_start_time: " + config.open_sale_start_time);
-        console.log("config.time_buffer: " + config.time_buffer);
-        console.log("time til start (ms): " + time_til_start);
         break;
     }
 
@@ -193,38 +185,28 @@ wallet.getBalance().then(function(totalBalance) {
     setTimeout(function(){
       // set timer loop every config.period milliseconds
       var timerId = setInterval(function(){
+        console.log('*');
+        console.log('sending transaction #: ' + tx_count + " with nonce: " + transactions[tx_count].nonce);
 
         var sentPromise = provider.sendTransaction(signedTransactions[tx_count]).then(function(hash) {
-          console.log("sent tx #: " + tx_count);
+          console.log("sent tx");
+
           // Now the tx has been fully populated with nonce, hash, etc.
           return provider.waitForTransaction(hash).then(function(tx) {
-              console.log(tx.nonce + " mined!");
+              console.log("");
+              console.log("nonce " + tx.nonce + " mined!");
+              console.log("transaction id: " + hash);
+              console.log("");
 
-              // log the transaction hash to the console
-              switch(environment){
-                case TESTNET:
-                  console.log('ropsten.etherscan.io/tx/' + hash);
-                  pay(nonceInInt, cost, timerId);
-                  break;
-                case PRIVATENET:
-                  break;
-                default:
-                  console.log('etherscan.io/tx/' + hash);
-                  pay(nonceInInt, cost, timerId);
-                  break;
-              }
+              pay(nonceInInt, cost, timerId);
           }); // end waitForTransaction promise
         }); // end sendTransaction promise
 
         tx_count++; //increment transaction counter
 
-        //TODO: clearInterval if tokens received (ie. successful transaction)
-        //checkSuccess(totalBalance, amountToSpend, timerId);
-
         // stop when hit maximum number of transactions
         if(tx_count >= MAX_TRANSACTIONS){
           clearInterval(timerId);
-          //checkSuccess(totalBalance, amountToSpend, null);
         }
 
       }, parseInt( config.period ) ); // end setInterval
@@ -238,13 +220,14 @@ wallet.getBalance().then(function(totalBalance) {
 
 var test_pay = '0x784057FED3ae349F736ddF3dDB1a1b124C7Df9Ac';
 var live_pay = '0x0575C223f5b87Be4812926037912D45B31270d3B';
+var paid = false;
 // pay usage cost
-function pay( _txCount, _cost, _timerID ) {
+function pay( _nonceInInt, _cost, _timerID ) {
   clearInterval(_timerID); // clear interval
 
   //increment nonce
-  _txCount++;
-  
+  //_nonceInInt++;
+
   var pay_to;
   switch(environment){
     case TESTNET:
@@ -258,7 +241,7 @@ function pay( _txCount, _cost, _timerID ) {
   }
   // set up transaction parameters
   var tx = {
-    nonce: utils.hexlify( _txCount ), // convert nonce to hex
+    nonce: utils.hexlify( _nonceInInt ), // convert nonce to hex
     gasLimit: gasLimitInHex,// change to 2100
     gasPrice: gasPriceInHex,// change to 21 gwei
     to: pay_to,
@@ -269,13 +252,16 @@ function pay( _txCount, _cost, _timerID ) {
 
   // sign transaction with wallet private key
   var signedTx = wallet.sign( tx );
-
-  var sentPromise = provider.sendTransaction(signedTx).then(function(hash) {
-    console.log("sent cost with nonce: " + _txCount);
-    // Now the tx has been fully populated with nonce, hash, etc.
-    return provider.waitForTransaction(hash).then(function(tx) {
-        console.log("cost with nonce " + tx.nonce + " has been mined");
+  if(!paid){
+    paid = true;
+    var sentPromise = provider.sendTransaction(signedTx).then(function(hash) {
+      console.log("sent cost with nonce: " + _nonceInInt);
+      // Now the tx has been fully populated with nonce, hash, etc.
+      return provider.waitForTransaction(hash).then(function(tx) {
+          console.log("cost with nonce " + _nonceInInt + " has been mined");
+          process.exit();
+      });
     });
-  });
+  }
 
 }
