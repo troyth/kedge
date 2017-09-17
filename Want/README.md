@@ -31,6 +31,7 @@ The strategy of Want is to chain together a cintix-style ICO Buyer pooling contr
 6.  If that first amount was successfully sent to the crowdsale contract and not intercepted by the `owner`, the process will repeat with larger random amount of ETH, over and over until the entire amount has been contributed.
 7.  `Wapp` will monitor the `wallet` for the receipt of Wanchain tokens. As soon as they arrive, it will send the entire amount to the `WanBuyer` contract, which will distribute them according to the amount that each of the `investors` contributed.
 
+*Note: Wanchain limits whitelist participation to 135 ETH. A more advanced version of Want would use a single `WanBuyer` contract but connect it to many `wallets`, each with a different `owner`.*
 
 
 ### Fee
