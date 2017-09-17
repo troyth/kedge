@@ -3,10 +3,10 @@
   "crowdsale_contract_address": "0xd6Cd31F283d24cfb442cBA1Bcf42290c07C15792",
   "max_tx_cost_in_wei": "150000000000000000",
   "open_sale_start_time": "1505541600000",
-  "time_buffer": "27900",
+  "time_buffer": "39901",
   "period": "4000",
   "gas_price": "50000000000",
-  "gas_limit": "100000",
+  "gas_limit": "95700",
   "test_sale_start_time": "1505517240000",
   "test_private_key": "",
   "test_contract_address": "0x972b4a9bCF20e04Ee1d99BE6BD0E23C48f6D19AF"
